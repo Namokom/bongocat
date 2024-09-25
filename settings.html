@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+    body {
+        overflow-x: hidden;
+        overflow-y: hidden;
+    }
+
+    form {
+        display: table;
+    }
+
+    p {
+        display: table-row;
+    }
+
+    label {
+        display: table-cell;
+    }
+
+    input {
+        display: table-cell;
+    }
+</style>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bongo Cat</title>
+    <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+</head>
+
+<body>
+    <form>
+        <fieldset>
+            <ul>
+                <h3 class="settings">Settings</h3>
+                <p>
+                    <label for="resWidth">Resolution Width</label>
+                    <input id="resWidth" class="form-control text-input" placeholder="resWidth">
+                </p>
+                <p>
+                    <label for="resHeight">Resolution Height</label>
+                    <input id="resHeight" class="form-control text-input" placeholder="resHeight">
+                </p>
+
+                <p>
+                    <label for="border">Border</label>
+                    <input type="checkbox" id="border">
+                </p>
+
+                <p>
+                    <label for="mic">Microphone</label>
+                    <input type="checkbox" id="mic">
+                </p>
+
+                <p>
+                    <label for="left">Left Keys</label>
+                    <input id="left" class="form-control text-input" placeholder="left">
+                </p>
+
+                <p>
+                    <label for="right">Right Keys</label>
+                    <input id="right" class="form-control text-input" placeholder="right">
+                </p>
+
+                <p>
+                    <label for="forward">Forward Keys</label>
+                    <input id="forward" class="form-control text-input" placeholder="forward">
+                </p>
+
+                <p>
+                    <label for="back">Back Keys</label>
+                    <input id="back" class="form-control text-input" placeholder="back">
+                </p>
+
+                <p>
+                    <label for="wave">Wave Keys</label>
+                    <input id="wave" class="form-control text-input" placeholder="wave">
+                </p>
+
+                <p>
+                    <label></label>
+                    <input type="button" value="Save" style="display: table-column; width:50%;" onclick="save()">
+                    <input type="button" value="Cancel" style="display: table-column; width:50%;" onclick="cancel()">
+                </p>
+            </ul>
+        </fieldset>
+    </form>
+
+    <script>
+        const { remote } = require("electron");
+        const jsconfig = require('electron-json-config');
+        const config = jsconfig.all();
+
+        function save() {
+            config.resWidth = parseInt(document.getElementById('resWidth').value);
+            config.resHeight = parseInt(document.getElementById('resHeight').value);
+            config.border = document.getElementById('border').checked + '';
+            config.mic = document.getElementById('mic').checked + '';
+            config.left = stringToArray(document.getElementById('left').value);
+            config.right = stringToArray(document.getElementById('right').value);
+            config.forward = stringToArray(document.getElementById('forward').value);
+            config.back = stringToArray(document.getElementById('back').value);
+            config.wave = stringToArray(document.getElementById('wave').value);
+            remote.getCurrentWindow().getParentWindow().send('save-settings', config);
+            this.close();
+        }
+
+        function cancel() {
+            this.close();
+        }
+
+        window.onload = () => {
+            document.getElementById('resWidth').value = config.resWidth;
+            document.getElementById('resHeight').value = config.resHeight;
+            document.getElementById('border').checked = config.border === 'true';
+            document.getElementById('mic').checked = config.mic === 'true';
+            document.getElementById('left').value = config.left;
+            document.getElementById('right').value = config.right;
+            document.getElementById('forward').value = config.forward;
+            document.getElementById('back').value = config.back;
+            document.getElementById('wave').value = config.wave;
+        }
+
+        function stringToArray(s) {
+            return s.replace(' ', '').split(',')
+                .map((e) => { return parseInt(e) })
+                .filter((e) => { return !isNaN(e) });
+        }
+    </script>
+</body>
+
+</html>

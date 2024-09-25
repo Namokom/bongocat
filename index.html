@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+    body {
+        overflow-x: hidden;
+        overflow-y: hidden;
+    }
+</style>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bongo Cat</title>
+    <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+</head>
+
+<body>
+    <canvas id="canvas" style="top: 0px; left: 0px; position: absolute;"></canvas>
+</body>
+
+<script>
+    require('./renderer.js')
+</script>
+
+</html>
