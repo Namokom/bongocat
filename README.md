@@ -16,17 +16,17 @@ Bongocat V.Upgrade is an enhanced version of the original bongocat by [Barkuto](
    git clone https://github.com/Namokom/bongocat-V.Upgrade.git
    ```
 2. Navigate to the project directory:
-  ```bash
-  cd bongocat
-  ```
+   ```bash
+   cd bongocat
+   ```
 3. Install dependencies:
-  ```bash
-  npm install
-  ```
+   ```bash
+   npm install
+   ```
 4. Run the application:
-  ```bash
-  npm start
-  ```
+   ```bash
+   npm start
+   ```
 
 **Acknowledgments**
 - Thanks to Barkuto for creating the original Bongo Cat Cam.
