@@ -29,5 +29,5 @@ Bongocat V.Upgrade is an enhanced version of the original bongocat by [Barkuto](
    ```
 
 **Acknowledgments**
-- Thanks to Barkuto for creating the original Bongo Cat Cam.
+- Thanks to [Barkuto](https://github.com/Barkuto/bongocat) for creating the original bongocat.
 - Special thanks to the contributors and the community for their support and feedback.
