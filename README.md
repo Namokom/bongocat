@@ -17,7 +17,7 @@ Bongocat V.Upgrade is an enhanced version of the original bongocat by [Barkuto](
    ```
 2. Navigate to the project directory:
    ```bash
-   cd bongocat
+   cd bongocat-V.Upgrade
    ```
 3. Install dependencies:
    ```bash
