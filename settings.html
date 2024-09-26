@@ -56,6 +56,11 @@
                 </p>
 
                 <p>
+                    <label for="blink">Blink</label>
+                    <input type="checkbox" id="blink">
+                </p>
+
+                <p>
                     <label for="left">Left Keys</label>
                     <input id="left" class="form-control text-input" placeholder="left">
                 </p>
@@ -99,6 +104,7 @@
             config.resHeight = parseInt(document.getElementById('resHeight').value);
             config.border = document.getElementById('border').checked + '';
             config.mic = document.getElementById('mic').checked + '';
+            config.blink = document.getElementById('blink').checked + '';
             config.left = stringToArray(document.getElementById('left').value);
             config.right = stringToArray(document.getElementById('right').value);
             config.forward = stringToArray(document.getElementById('forward').value);
@@ -117,6 +123,7 @@
             document.getElementById('resHeight').value = config.resHeight;
             document.getElementById('border').checked = config.border === 'true';
             document.getElementById('mic').checked = config.mic === 'true';
+            document.getElementById('blink').checked = config.blink === 'true';
             document.getElementById('left').value = config.left;
             document.getElementById('right').value = config.right;
             document.getElementById('forward').value = config.forward;

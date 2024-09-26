@@ -6,7 +6,7 @@ let mainWindow;
 app.allowRendererProcessReuse = false;
 app.whenReady().then(() => {
     let w = dev ? 1200 : 612;
-    let h = dev ? 600 : 354;
+    let h = dev ? 600 : 414;
     let mainWindowState = windowStateKeeper({
         defaultWidth: w,
         defaultHeight: h
