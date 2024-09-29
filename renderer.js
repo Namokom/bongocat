@@ -5,7 +5,7 @@ const fs = require('fs');
 
 let config;
 let canvas, ctx;
-let images = ['/img/bg1.png', '/img/bg2.png', '/img/up.png', '/img/mouse.png',
+let images = ['/img/bg.png', '/img/eye1.png', '/img/eye2.png', '/img/up.png', '/img/mouse.png',
     '/img/left.png', '/img/right.png', '/img/forward.png', '/img/back.png',
     '/img/wave.png', '/img/border.png', '/img/mouth.png', 
     '/img/mouselr.png','/img/mouser.png', '/img/mousel.png'];
@@ -15,24 +15,24 @@ let leftKeys, rightKeys, forwardKeys, backKeys, waveKeys;
 let mouseX, mouseY;
 let volume = 0;
 
-const BG1 = 0; const BG2 = 1; const UP = 2; const MOUSE = 3;
-const LEFT = 4; const RIGHT = 5; const FORWARD = 6; const BACK = 7;
-const WAVE = 8; const BORDER = 9; const MOUTH = 10;
-const MOUSELR = 11; const MOUSER = 12; const MOUSEL = 13;
+const BG = 0; const EYE1 = 1; const EYE2 = 2; const UP = 3; const MOUSE = 4;
+const LEFT = 5; const RIGHT = 6; const FORWARD = 7; const BACK = 8;
+const WAVE = 9; const BORDER = 10; const MOUTH = 11;
+const MOUSELR = 12; const MOUSER = 13; const MOUSEL = 14;
 
 // Click state variables
 let isLeftClick = false;
 let isRightClick = false;
-let currentBackground = BG1; // Start with the first background image
+let currentBackground = EYE1; // Start with the first background image
 // Add this new interval to toggle the background every 2 seconds
 let runCount = 0; // ตัวแปรนับรอบการรัน
 setInterval(() => {
     runCount++; // เพิ่มรอบการรันขึ้น 1
 
     if (runCount === 10) {
-        currentBackground = BG2; // เปลี่ยนเป็น BG2
+        currentBackground = EYE2; // เปลี่ยนเป็น BG2
         setTimeout(() => {
-            currentBackground = BG1; // เปลี่ยนกลับไปเป็น BG1
+            currentBackground = EYE1; // เปลี่ยนกลับไปเป็น BG1
         }, 500); // รอ 0.5 วินาทีก่อนกลับไปที่ BG1
 
         runCount = 0; // รีเซ็ตนับรอบการรัน
@@ -132,10 +132,11 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'green';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(images[BG], 0, 0);
     if (config.blink === 'true') {
         ctx.drawImage(images[currentBackground], 0, 0); // Use currentBackground instead of BG
     } else {
-        ctx.drawImage(images[BG1], 0, 0);
+        ctx.drawImage(images[EYE1], 0, 0);
     }
     
 
