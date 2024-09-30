@@ -23,22 +23,18 @@ const MOUSELR = 12; const MOUSER = 13; const MOUSEL = 14;
 // Click state variables
 let isLeftClick = false;
 let isRightClick = false;
-let currentBackground = EYE1; // Start with the first background image
-// Add this new interval to toggle the background every 2 seconds
-let runCount = 0; // ตัวแปรนับรอบการรัน
+let currentEye = EYE1; // Start with the first background image
+let runCount = 0; // Counter for animation
 setInterval(() => {
-    runCount++; // เพิ่มรอบการรันขึ้น 1
-
+    runCount++;
     if (runCount === 10) {
-        currentBackground = EYE2; // เปลี่ยนเป็น BG2
+        currentEye = EYE2;
         setTimeout(() => {
-            currentBackground = EYE1; // เปลี่ยนกลับไปเป็น BG1
-        }, 500); // รอ 0.5 วินาทีก่อนกลับไปที่ BG1
-
-        runCount = 0; // รีเซ็ตนับรอบการรัน
+            currentEye = EYE1;
+        }, 500);
+        runCount = 0;
     }
-}, 1000); // เรียกทุกๆ 1 วินาที
-
+}, 1000);
 
 function readConfig() {
     config = jsconfig.all();
@@ -59,11 +55,11 @@ function readConfig() {
             "border": 'true',
             "mic": 'true',
             "blink": 'true',
-            "left": [65, 81, 49, 9, 16, 192, 27, 88, 53, 54, 48, 37],
-            "right": [68, 69, 51, 82, 84, 66, 90, 86, 52, 57, 39],
-            "forward": [87, 50, 38],
-            "back": [83, 70, 71, 160, 162, 67, 32, 55, 56, 40],
-            "wave": [75]
+            "left": ['a', 'q', '1', 'Tab', 'Shift', 'Alt', 'Escape', 'x', '5', '6', '0', 'ArrowLeft'],
+            "right": ['d', 'e', '3', 'r', 't', 'b', 'z', 'v', '4', '9', 'ArrowRight'],
+            "forward": ['w', '2', 'ArrowUp'],
+            "back": ['s', 'f', 'g', 'ShiftRight', 'ControlRight', 'c', 'Space', '7', '8', 'ArrowDown'],
+            "wave": ['k']
         });
         fs.writeFile(jsconfig.file(), JSON.stringify(jsconfig.all(), null, 4), (err) => { if (err) { throw err; } });
         readConfig();
@@ -77,12 +73,12 @@ function setCanvas() {
     canvas.height = 354;
 }
 
-function isValidKey(keycode) {
-    return leftKeys.includes(keycode)
-        || rightKeys.includes(keycode)
-        || forwardKeys.includes(keycode)
-        || backKeys.includes(keycode)
-        || waveKeys.includes(keycode);
+function isValidKey(keychar) {
+    return leftKeys.includes(keychar)
+        || rightKeys.includes(keychar)
+        || forwardKeys.includes(keychar)
+        || backKeys.includes(keychar)
+        || waveKeys.includes(keychar);
 }
 
 function loadImage(imagePath) {
@@ -103,7 +99,6 @@ async function loadImages() {
     return imgs;
 }
 
-// https://stackoverflow.com/questions/33322681/checking-microphone-volume-in-javascript
 function setMic() {
     navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         .then((stream) => {
@@ -134,11 +129,10 @@ function draw() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(images[BG], 0, 0);
     if (config.blink === 'true') {
-        ctx.drawImage(images[currentBackground], 0, 0); // Use currentBackground instead of BG
+        ctx.drawImage(images[currentEye], 0, 0);
     } else {
         ctx.drawImage(images[EYE1], 0, 0);
     }
-    
 
     let lastKey = Array.from(keysDown).pop();
     if (leftKeys.includes(lastKey)) hand = LEFT;
@@ -151,15 +145,15 @@ function draw() {
     ctx.drawImage(images[hand], 0, 0);
 
     if (isLeftClick && isRightClick) {
-        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSELR]); // วาดภาพเมื่อคลิกทั้งซ้ายและขวา
+        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSELR]);
     } else if (isLeftClick) {
-        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSEL]); // วาดภาพเมื่อคลิกซ้าย
+        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSEL]);
     } else if (isRightClick) {
-        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSER]); // วาดภาพเมื่อคลิกขวา
+        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSER]);
     } else {
-        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSE]); // วาดภาพปกติเมื่อไม่มีการคลิก
+        drawArm(mouseX, mouseY, config.resWidth, config.resHeight, ctx, images[MOUSE]);
     }
-    
+
     if (config.border === 'true') ctx.drawImage(images[BORDER], 0, 0);
 
     if (config.mic === 'true') {
@@ -187,42 +181,37 @@ function draw() {
 
 function initInputHandler() {
     if (process.platform === 'linux') {
-        // Check for Wayland
         if (process.env.DISPLAY === undefined) { 
             console.log("Using Wayland input handling");
             const { WaylandClient } = require('wayland-client');
 
-            // Initialize Wayland connection
             const wayland = new WaylandClient();
 
-            // Define variables for mouse position
             let mouseX = 0;
             let mouseY = 0;
 
-            // Set up mouse event handlers
             wayland.on('pointerMotion', (event) => {
                 mouseX = Math.min(Math.max(event.x, 0), 1920);
                 mouseY = Math.min(Math.max(event.y, 0), 1080);
             });
 
             wayland.on('pointerButton', (event) => {
-                if (event.button === 0) { // Left click
-                    isLeftClick = event.state === 1; // 1 for pressed, 0 for released
+                if (event.button === 0) {
+                    isLeftClick = event.state === 1;
                 }
-                if (event.button === 1) { // Right click
-                    isRightClick = event.state === 1; // 1 for pressed, 0 for released
+                if (event.button === 1) {
+                    isRightClick = event.state === 1;
                 }
             });
 
             wayland.on('key', (event) => {
-                if (isValidKey(event.keycode)) {
-                    keysDown.add(event.keycode);
+                if (isValidKey(event.keychar)) {
+                    keysDown.add(event.keychar);
                 } else {
-                    keysDown.delete(event.keycode);
+                    keysDown.delete(event.keychar);
                 }
             });
 
-            // Start the Wayland event loop
             wayland.connect();
         } else {
             console.log("Using X11 input handling");
@@ -234,40 +223,29 @@ function initInputHandler() {
             });
 
             ioHook.on('mousedown', event => {
-                if (event.button === 1) { // Left click
-                    isLeftClick = true;
-                }
-                if (event.button === 3) { // Right click
-                    isRightClick = true;
-                }
-            });
-
-            ioHook.on('mousedrag', event => {
-                mouseX = Math.min(Math.max(event.x, 0), 1920);
-                mouseY = Math.min(Math.max(event.y, 0), 1080);
+                if (event.button === 1) isLeftClick = true;
+                if (event.button === 3) isRightClick = true;
             });
 
             ioHook.on('mouseup', event => {
-                if (event.button === 1) { // Left click
-                    isLeftClick = false;
-                }
-                if (event.button === 3) { // Right click
-                    isRightClick = false;
-                }
+                if (event.button === 1) isLeftClick = false;
+                if (event.button === 3) isRightClick = false;
             });
 
             ioHook.on('keydown', event => {
-                if (isValidKey(event.rawcode)) {
-                    keysDown.add(event.rawcode);
+                if (isValidKey(event.keychar)) {
+                    keysDown.add(event.keychar);
                 }
             });
 
-            ioHook.on('keyup', event => { keysDown.delete(event.rawcode); });
+            ioHook.on('keyup', event => {
+                keysDown.delete(event.keychar);
+            });
 
             ioHook.start();
         }
     } else {
-        console.log("Using keyboard and mouse handling for Windows or Mac");
+        console.log("Using iohook for input handling");
         const ioHook = require('iohook');
 
         ioHook.on('mousemove', event => {
@@ -276,35 +254,24 @@ function initInputHandler() {
         });
 
         ioHook.on('mousedown', event => {
-            if (event.button === 1) { // Left click
-                isLeftClick = true;
-            }
-            if (event.button === 2) { // Right click
-                isRightClick = true;
-            }
-        });
-
-        ioHook.on('mousedrag', event => {
-            mouseX = Math.min(Math.max(event.x, 0), 1920);
-            mouseY = Math.min(Math.max(event.y, 0), 1080);
+            if (event.button === 1) isLeftClick = true;
+            if (event.button === 2) isRightClick = true;
         });
 
         ioHook.on('mouseup', event => {
-            if (event.button === 1) { // Left click
-                isLeftClick = false;
-            }
-            if (event.button === 2) { // Right click
-                isRightClick = false;
-            }
+            if (event.button === 1) isLeftClick = false;
+            if (event.button === 2) isRightClick = false;
         });
 
         ioHook.on('keydown', event => {
-            if (isValidKey(event.rawcode)) {
-                keysDown.add(event.rawcode);
+            if (isValidKey(event.keychar)) {
+                keysDown.add(event.keychar);
             }
         });
 
-        ioHook.on('keyup', event => { keysDown.delete(event.rawcode); });
+        ioHook.on('keyup', event => {
+            keysDown.delete(event.keychar);
+        });
 
         ioHook.start();
     }
