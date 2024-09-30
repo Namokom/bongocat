@@ -186,42 +186,87 @@ function draw() {
 }
 
 function initInputHandler() {
-    if (process.platform === 'linux' && process.env.DISPLAY === undefined) {
-        // Check for Wayland
-        const { WaylandClient } = require('wayland-client');
+    if (process.platform === 'linux') {
+        if (process.env.DISPLAY === undefined) {
+            // Check for Wayland
+            const { WaylandClient } = require('wayland-client');
 
-        // Initialize Wayland connection
-        const wayland = new WaylandClient();
+            // Initialize Wayland connection
+            const wayland = new WaylandClient();
 
-        // Define variables for mouse position
-        let mouseX = 0;
-        let mouseY = 0;
+            // Define variables for mouse position
+            let mouseX = 0;
+            let mouseY = 0;
 
-        // Set up mouse event handlers
-        wayland.on('pointerMotion', (event) => {
-            mouseX = Math.min(Math.max(event.x, 0), 1920);
-            mouseY = Math.min(Math.max(event.y, 0), 1080);
-        });
+            // Set up mouse event handlers
+            wayland.on('pointerMotion', (event) => {
+                mouseX = Math.min(Math.max(event.x, 0), 1920);
+                mouseY = Math.min(Math.max(event.y, 0), 1080);
+            });
 
-        wayland.on('pointerButton', (event) => {
-            if (event.button === 0) { // Left click
-                isLeftClick = event.state === 1; // 1 for pressed, 0 for released
-            }
-            if (event.button === 1) { // Right click
-                isRightClick = event.state === 1; // 1 for pressed, 0 for released
-            }
-        });
+            wayland.on('pointerButton', (event) => {
+                if (event.button === 0) { // Left click
+                    isLeftClick = event.state === 1; // 1 for pressed, 0 for released
+                }
+                if (event.button === 1) { // Right click
+                    isRightClick = event.state === 1; // 1 for pressed, 0 for released
+                }
+            });
 
-        wayland.on('key', (event) => {
-            if (isValidKey(event.keycode)) {
-                keysDown.add(event.keycode);
-            } else {
-                keysDown.delete(event.keycode);
-            }
-        });
+            wayland.on('key', (event) => {
+                if (isValidKey(event.keycode)) {
+                    keysDown.add(event.keycode);
+                } else {
+                    keysDown.delete(event.keycode);
+                }
+            });
 
-        // Start the Wayland event loop
-        wayland.connect();
+            // Start the Wayland event loop
+            wayland.connect();
+        } else {
+            // X11 input handling
+            const x11 = require('x11');
+
+            x11.createClient((err, display) => {
+                if (err) {
+                    console.error('Error connecting to X11:', err);
+                    return;
+                }
+                const X = display.client;
+
+                // Track mouse movement
+                X.GrabPointer(
+                    display.screen[0].root, false,
+                    x11.eventMask.PointerMotion | x11.eventMask.ButtonPress | x11.eventMask.ButtonRelease,
+                    1, 1, display.screen[0].root, 0, 0
+                );
+
+                X.on('event', (event) => {
+                    if (event.type === 6) { // MotionNotify
+                        mouseX = Math.min(Math.max(event.x, 0), 1920);
+                        mouseY = Math.min(Math.max(event.y, 0), 1080);
+                    } else if (event.type === 4 || event.type === 5) { // ButtonPress or ButtonRelease
+                        if (event.keycode === 1) { // Left click
+                            isLeftClick = event.type === 4; // Press
+                        } else if (event.keycode === 3) { // Right click
+                            isRightClick = event.type === 4; // Press
+                        }
+                    }
+                });
+
+                // Track keypress
+                X.GrabKey(display.screen[0].root, false, 0, x11.keycode.KeyPressMask, 1, 1);
+                X.on('event', (event) => {
+                    if (event.type === 2) { // KeyPress
+                        if (isValidKey(event.keycode)) {
+                            keysDown.add(event.keycode);
+                        }
+                    } else if (event.type === 3) { // KeyRelease
+                        keysDown.delete(event.keycode);
+                    }
+                });
+            });
+        }
     } else {
         const ioHook = require('iohook');
 
@@ -264,6 +309,7 @@ function initInputHandler() {
         ioHook.start();
     }
 }
+
 
 // IPC Communication
 ipcRenderer.on('save-settings', (event, args) => {
