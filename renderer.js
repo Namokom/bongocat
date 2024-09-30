@@ -186,43 +186,88 @@ function draw() {
 }
 
 function initInputHandler() {
-    if (process.platform === 'linux' && process.env.DISPLAY === undefined) {
+    if (process.platform === 'linux') {
         // Check for Wayland
-        const { WaylandClient } = require('wayland-client');
+        if (process.env.DISPLAY === undefined) { 
+            console.log("Using Wayland input handling");
+            const { WaylandClient } = require('wayland-client');
 
-        // Initialize Wayland connection
-        const wayland = new WaylandClient();
+            // Initialize Wayland connection
+            const wayland = new WaylandClient();
 
-        // Define variables for mouse position
-        let mouseX = 0;
-        let mouseY = 0;
+            // Define variables for mouse position
+            let mouseX = 0;
+            let mouseY = 0;
 
-        // Set up mouse event handlers
-        wayland.on('pointerMotion', (event) => {
-            mouseX = Math.min(Math.max(event.x, 0), 1920);
-            mouseY = Math.min(Math.max(event.y, 0), 1080);
-        });
+            // Set up mouse event handlers
+            wayland.on('pointerMotion', (event) => {
+                mouseX = Math.min(Math.max(event.x, 0), 1920);
+                mouseY = Math.min(Math.max(event.y, 0), 1080);
+            });
 
-        wayland.on('pointerButton', (event) => {
-            if (event.button === 0) { // Left click
-                isLeftClick = event.state === 1; // 1 for pressed, 0 for released
-            }
-            if (event.button === 1) { // Right click
-                isRightClick = event.state === 1; // 1 for pressed, 0 for released
-            }
-        });
+            wayland.on('pointerButton', (event) => {
+                if (event.button === 0) { // Left click
+                    isLeftClick = event.state === 1; // 1 for pressed, 0 for released
+                }
+                if (event.button === 1) { // Right click
+                    isRightClick = event.state === 1; // 1 for pressed, 0 for released
+                }
+            });
 
-        wayland.on('key', (event) => {
-            if (isValidKey(event.keycode)) {
-                keysDown.add(event.keycode);
-            } else {
-                keysDown.delete(event.keycode);
-            }
-        });
+            wayland.on('key', (event) => {
+                if (isValidKey(event.keycode)) {
+                    keysDown.add(event.keycode);
+                } else {
+                    keysDown.delete(event.keycode);
+                }
+            });
 
-        // Start the Wayland event loop
-        wayland.connect();
+            // Start the Wayland event loop
+            wayland.connect();
+        } else {
+            console.log("Using X11 input handling");
+            const ioHook = require('iohook');
+
+            ioHook.on('mousemove', event => {
+                mouseX = Math.min(Math.max(event.x, 0), 1920);
+                mouseY = Math.min(Math.max(event.y, 0), 1080);
+            });
+
+            ioHook.on('mousedown', event => {
+                if (event.button === 1) { // Left click
+                    isLeftClick = true;
+                }
+                if (event.button === 3) { // Right click
+                    isRightClick = true;
+                }
+            });
+
+            ioHook.on('mousedrag', event => {
+                mouseX = Math.min(Math.max(event.x, 0), 1920);
+                mouseY = Math.min(Math.max(event.y, 0), 1080);
+            });
+
+            ioHook.on('mouseup', event => {
+                if (event.button === 1) { // Left click
+                    isLeftClick = false;
+                }
+                if (event.button === 3) { // Right click
+                    isRightClick = false;
+                }
+            });
+
+            ioHook.on('keydown', event => {
+                if (isValidKey(event.rawcode)) {
+                    keysDown.add(event.rawcode);
+                }
+            });
+
+            ioHook.on('keyup', event => { keysDown.delete(event.rawcode); });
+
+            ioHook.start();
+        }
     } else {
+        console.log("Using keyboard and mouse handling for Windows or Mac");
         const ioHook = require('iohook');
 
         ioHook.on('mousemove', event => {
