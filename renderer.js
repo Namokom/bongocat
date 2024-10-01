@@ -214,34 +214,35 @@ function initInputHandler() {
             wayland.connect();
         } else {
             console.log("Using X11 input handling");
-            const x11 = require('x11');
-            
-            // Initialize X11 connection
-            x11.createClient(function(err, display) {
-                const X = display.client;
-                const root = display.screen[0].root;
-                const wid = X.AllocID();
+            const ioHook = require('iohook');
 
-                // Listen for key press and mouse events
-                X.ChangeWindowAttributes(root, wid, { eventMask: x11.eventMask.KeyPress | x11.eventMask.KeyRelease | x11.eventMask.PointerMotion | x11.eventMask.ButtonPress | x11.eventMask.ButtonRelease });
-                
-                X.on('event', (ev) => {
-                    if (ev.name === 'KeyPress') {
-                        if (isValidKey(ev.keycode)) keysDown.add(ev.keycode);
-                    } else if (ev.name === 'KeyRelease') {
-                        keysDown.delete(ev.keycode);
-                    } else if (ev.name === 'MotionNotify') {
-                        mouseX = Math.min(Math.max(ev.x, 0), 1920);
-                        mouseY = Math.min(Math.max(ev.y, 0), 1080);
-                    } else if (ev.name === 'ButtonPress') {
-                        if (ev.keycode === 1) isLeftClick = true; // Left click
-                        if (ev.keycode === 3) isRightClick = true; // Right click
-                    } else if (ev.name === 'ButtonRelease') {
-                        if (ev.keycode === 1) isLeftClick = false; // Left click release
-                        if (ev.keycode === 3) isRightClick = false; // Right click release
-                    }
-                });
+            ioHook.on('mousemove', event => {
+                mouseX = Math.min(Math.max(event.x, 0), 1920);
+                mouseY = Math.min(Math.max(event.y, 0), 1080);
             });
+
+            ioHook.on('mousedown', event => {
+                if (event.button === 1) isLeftClick = true; // Left click
+                if (event.button === 3) isRightClick = true; // Right click
+            });
+
+            ioHook.on('mousedrag', event => {
+                mouseX = Math.min(Math.max(event.x, 0), 1920);
+                mouseY = Math.min(Math.max(event.y, 0), 1080);
+            });
+
+            ioHook.on('mouseup', event => {
+                if (event.button === 1) isLeftClick = false; // Left click release
+                if (event.button === 3) isRightClick = false; // Right click release
+            });
+
+            ioHook.on('keydown', event => {
+                if (isValidKey(event.rawcode)) keysDown.add(event.rawcode);
+            });
+
+            ioHook.on('keyup', event => { keysDown.delete(event.rawcode); });
+
+            ioHook.start();
         }
     } else {
         console.log("Using keyboard and mouse handling for Windows or Mac");
