@@ -188,83 +188,60 @@ function draw() {
 function initInputHandler() {
     if (process.platform === 'linux') {
         // Check for Wayland
-        if (process.env.DISPLAY === undefined) { 
+        if (process.env.DISPLAY === undefined) {
             console.log("Using Wayland input handling");
             const { WaylandClient } = require('wayland-client');
-
-            // Initialize Wayland connection
+            
+            // Wayland input handling remains unchanged
             const wayland = new WaylandClient();
-
-            // Define variables for mouse position
-            let mouseX = 0;
-            let mouseY = 0;
-
-            // Set up mouse event handlers
+            let mouseX = 0, mouseY = 0;
+            
             wayland.on('pointerMotion', (event) => {
                 mouseX = Math.min(Math.max(event.x, 0), 1920);
                 mouseY = Math.min(Math.max(event.y, 0), 1080);
             });
 
             wayland.on('pointerButton', (event) => {
-                if (event.button === 0) { // Left click
-                    isLeftClick = event.state === 1; // 1 for pressed, 0 for released
-                }
-                if (event.button === 1) { // Right click
-                    isRightClick = event.state === 1; // 1 for pressed, 0 for released
-                }
+                if (event.button === 0) isLeftClick = event.state === 1; // Left click
+                if (event.button === 1) isRightClick = event.state === 1; // Right click
             });
 
             wayland.on('key', (event) => {
-                if (isValidKey(event.keycode)) {
-                    keysDown.add(event.keycode);
-                } else {
-                    keysDown.delete(event.keycode);
-                }
+                if (isValidKey(event.keycode)) keysDown.add(event.keycode);
+                else keysDown.delete(event.keycode);
             });
 
-            // Start the Wayland event loop
             wayland.connect();
         } else {
             console.log("Using X11 input handling");
-            const ioHook = require('iohook');
+            const { Client } = require('x11');
+            
+            // Initialize X11 connection
+            Client((err, display) => {
+                if (err) throw err;
+                const X = display.client;
+                const root = display.screen[0].root;
 
-            ioHook.on('mousemove', event => {
-                mouseX = Math.min(Math.max(event.x, 0), 1920);
-                mouseY = Math.min(Math.max(event.y, 0), 1080);
+                // Listen for key press and mouse events
+                X.ChangeWindowAttributes(root, { eventMask: x11.eventMask.KeyPress | x11.eventMask.KeyRelease | x11.eventMask.PointerMotion | x11.eventMask.ButtonPress | x11.eventMask.ButtonRelease });
+                
+                X.on('event', (ev) => {
+                    if (ev.name === 'KeyPress') {
+                        if (isValidKey(ev.keycode)) keysDown.add(ev.keycode);
+                    } else if (ev.name === 'KeyRelease') {
+                        keysDown.delete(ev.keycode);
+                    } else if (ev.name === 'MotionNotify') {
+                        mouseX = Math.min(Math.max(ev.x, 0), 1920);
+                        mouseY = Math.min(Math.max(ev.y, 0), 1080);
+                    } else if (ev.name === 'ButtonPress') {
+                        if (ev.keycode === 1) isLeftClick = true; // Left click
+                        if (ev.keycode === 3) isRightClick = true; // Right click
+                    } else if (ev.name === 'ButtonRelease') {
+                        if (ev.keycode === 1) isLeftClick = false; // Left click release
+                        if (ev.keycode === 3) isRightClick = false; // Right click release
+                    }
+                });
             });
-
-            ioHook.on('mousedown', event => {
-                if (event.button === 1) { // Left click
-                    isLeftClick = true;
-                }
-                if (event.button === 3) { // Right click
-                    isRightClick = true;
-                }
-            });
-
-            ioHook.on('mousedrag', event => {
-                mouseX = Math.min(Math.max(event.x, 0), 1920);
-                mouseY = Math.min(Math.max(event.y, 0), 1080);
-            });
-
-            ioHook.on('mouseup', event => {
-                if (event.button === 1) { // Left click
-                    isLeftClick = false;
-                }
-                if (event.button === 3) { // Right click
-                    isRightClick = false;
-                }
-            });
-
-            ioHook.on('keydown', event => {
-                if (isValidKey(event.rawcode)) {
-                    keysDown.add(event.rawcode);
-                }
-            });
-
-            ioHook.on('keyup', event => { keysDown.delete(event.rawcode); });
-
-            ioHook.start();
         }
     } else {
         console.log("Using keyboard and mouse handling for Windows or Mac");
@@ -276,12 +253,8 @@ function initInputHandler() {
         });
 
         ioHook.on('mousedown', event => {
-            if (event.button === 1) { // Left click
-                isLeftClick = true;
-            }
-            if (event.button === 2) { // Right click
-                isRightClick = true;
-            }
+            if (event.button === 1) isLeftClick = true; // Left click
+            if (event.button === 2) isRightClick = true; // Right click
         });
 
         ioHook.on('mousedrag', event => {
@@ -290,18 +263,12 @@ function initInputHandler() {
         });
 
         ioHook.on('mouseup', event => {
-            if (event.button === 1) { // Left click
-                isLeftClick = false;
-            }
-            if (event.button === 2) { // Right click
-                isRightClick = false;
-            }
+            if (event.button === 1) isLeftClick = false; // Left click release
+            if (event.button === 2) isRightClick = false; // Right click release
         });
 
         ioHook.on('keydown', event => {
-            if (isValidKey(event.rawcode)) {
-                keysDown.add(event.rawcode);
-            }
+            if (isValidKey(event.rawcode)) keysDown.add(event.rawcode);
         });
 
         ioHook.on('keyup', event => { keysDown.delete(event.rawcode); });
