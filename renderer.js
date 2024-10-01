@@ -214,16 +214,16 @@ function initInputHandler() {
             wayland.connect();
         } else {
             console.log("Using X11 input handling");
-            const { Client } = require('x11');
+            const x11 = require('x11');
             
             // Initialize X11 connection
-            Client((err, display) => {
-                if (err) throw err;
+            x11.createClient(function(err, display) {
                 const X = display.client;
                 const root = display.screen[0].root;
+                const wid = X.AllocID();
 
                 // Listen for key press and mouse events
-                X.ChangeWindowAttributes(root, { eventMask: x11.eventMask.KeyPress | x11.eventMask.KeyRelease | x11.eventMask.PointerMotion | x11.eventMask.ButtonPress | x11.eventMask.ButtonRelease });
+                X.ChangeWindowAttributes(root, wid, { eventMask: x11.eventMask.KeyPress | x11.eventMask.KeyRelease | x11.eventMask.PointerMotion | x11.eventMask.ButtonPress | x11.eventMask.ButtonRelease });
                 
                 X.on('event', (ev) => {
                     if (ev.name === 'KeyPress') {
