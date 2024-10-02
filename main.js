@@ -3,7 +3,9 @@ const windowStateKeeper = require('electron-window-state');
 
 const dev = false;
 let mainWindow;
+
 app.allowRendererProcessReuse = false;
+
 app.whenReady().then(() => {
     let w = dev ? 1200 : 612;
     let h = dev ? 600 : 414;
@@ -11,6 +13,7 @@ app.whenReady().then(() => {
         defaultWidth: w,
         defaultHeight: h
     });
+
     mainWindow = new BrowserWindow({
         useContentSize: true,
         x: mainWindowState.x,
@@ -28,6 +31,7 @@ app.whenReady().then(() => {
     if (dev) mainWindow.webContents.openDevTools();
 });
 
+// ฟังก์ชันเปิดหน้าต่าง settings
 function openSettings() {
     let w = dev ? 600 : 390;
     let h = dev ? 400 : 335;
@@ -45,4 +49,12 @@ function openSettings() {
     if (dev) win.webContents.openDevTools();
 }
 
-ipcMain.on('open-settings', (event, args) => { openSettings(); });
+// รับ event จาก renderer process
+ipcMain.on('open-settings', (event, args) => {
+    openSettings();
+});
+
+// รับ event จาก renderer และแสดง log ใน terminal
+ipcMain.on('log-message', (event, message) => {
+    console.log(`Message from renderer: ${message}`);
+});
