@@ -23,16 +23,16 @@ const MOUSELR = 12; const MOUSER = 13; const MOUSEL = 14;
 // Click state variables
 let isLeftClick = false;
 let isRightClick = false;
-let currentBackground = EYE1; // Start with the first background image
+let currentEye = EYE1; // Start with the first background image
 // Add this new interval to toggle the background every 2 seconds
 let runCount = 0; // ตัวแปรนับรอบการรัน
 setInterval(() => {
     runCount++; // เพิ่มรอบการรันขึ้น 1
 
     if (runCount === 10) {
-        currentBackground = EYE2; // เปลี่ยนเป็น BG2
+        currentEye = EYE2; // เปลี่ยนเป็น BG2
         setTimeout(() => {
-            currentBackground = EYE1; // เปลี่ยนกลับไปเป็น BG1
+            currentEye = EYE1; // เปลี่ยนกลับไปเป็น BG1
         }, 500); // รอ 0.5 วินาทีก่อนกลับไปที่ BG1
 
         runCount = 0; // รีเซ็ตนับรอบการรัน
@@ -70,12 +70,16 @@ function readConfig() {
         }
 }
 
-function setCanvas() {
+async function setCanvas() {
+    let bgImage = await loadImage(__dirname + images[BG]);
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
-    canvas.width = 612;
-    canvas.height = 354;
+
+    // ตั้งค่า canvas ตามขนาดของรูป BG
+    canvas.width = bgImage.width;
+    canvas.height = bgImage.height;
 }
+
 
 function isValidKey(keycode) {
     return leftKeys.includes(keycode)
@@ -103,30 +107,27 @@ async function loadImages() {
     return imgs;
 }
 
-// https://stackoverflow.com/questions/33322681/checking-microphone-volume-in-javascript
 function setMic() {
     navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-    .then((stream) => {
-        let audioContext = new AudioContext();
-        let streamSource = audioContext.createMediaStreamSource(stream);
-        let processor = audioContext.createScriptProcessor(512);
+        .then(async (stream) => {
+            const audioContext = new AudioContext();
+            await audioContext.audioWorklet.addModule('mic-processor.js'); // Load the worklet
+            const micNode = new AudioWorkletNode(audioContext, 'mic-processor');
 
-        streamSource.connect(processor);
-        processor.connect(audioContext.destination);
-        processor.onaudioprocess = (e) => {
-            let buf = event.inputBuffer.getChannelData(0);
-            let sum = 0;
-            for (var i = 0; i < buf.length; i++) {
-                sum += buf[i] * buf[i];
-            }
-            let rms = Math.sqrt(sum / buf.length);
-            volume = Math.max(rms, volume * 0.50);
-        };
-    })
-    .catch(function (err) {
-        console.log(err);
-    });
+            // Connect the microphone stream to the worklet
+            const streamSource = audioContext.createMediaStreamSource(stream);
+            streamSource.connect(micNode);
+            micNode.connect(audioContext.destination); // Connect to the output
+            
+            micNode.port.onmessage = (event) => {
+                volume = event.data; // Update volume from the worklet
+            };
+        })
+        .catch(function (err) {
+            console.error('Error accessing microphone:', err);
+        });
 }
+
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -134,7 +135,7 @@ function draw() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(images[BG], 0, 0);
     if (config.blink === 'true') {
-        ctx.drawImage(images[currentBackground], 0, 0); // Use currentBackground instead of BG
+        ctx.drawImage(images[currentEye], 0, 0); // Use currentEye instead of BG
     } else {
         ctx.drawImage(images[EYE1], 0, 0);
     }
@@ -404,12 +405,18 @@ ipcRenderer.on('save-settings', (event, args) => {
 });
 
 // Initialize everything
+function animate() {
+    draw();
+    requestAnimationFrame(animate);
+}
 readConfig();
 window.onkeydown = (e) => { if (e.ctrlKey && e.shiftKey && e.code === 'KeyO') ipcRenderer.send('open-settings'); }
 setCanvas();
 setMic();
 loadImages().then((imgs) => {
     images = imgs;
-    initInputHandler(); // Initialize input handling
-    setInterval(draw, 1000 / 144);
+    initInputHandler();
+    requestAnimationFrame(animate); // เริ่มการวาดเมื่อภาพโหลดเสร็จ
+}).catch((err) => {
+    console.error('Error initializing:', err);
 });
