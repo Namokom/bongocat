@@ -13,7 +13,7 @@ bongocat is an enhanced version of the original bongocat by [Barkuto](https://gi
 ## Installation Instructions
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Namokom/bongocat-V.Upgrade.git
+   git clone https://github.com/Namokom/bongocat.git
    ```
 2. Navigate to the project directory:
    ```bash
