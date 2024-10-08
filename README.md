@@ -1,6 +1,6 @@
-# Bongocat V.Upgrade
+# Bongocat
 
-Bongocat V.Upgrade is an enhanced version of the original bongocat by [Barkuto](https://github.com/Barkuto/bongocat). This project aims to provide users with an interactive and fun webcam experience, incorporating features that allow for customizable and animated bongo cat overlays during video calls and streams.
+Bongocat is an enhanced version of the original bongocat by [Barkuto](https://github.com/Barkuto/bongocat). This project aims to provide users with an interactive and fun webcam experience, incorporating features that allow for customizable and animated bongo cat overlays during video calls and streams.
 
 ## Key Features
 - **Customizable Overlays**: Choose from various Bongo Cat animations and backgrounds to personalize your webcam feed.
